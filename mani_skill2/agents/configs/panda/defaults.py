@@ -94,14 +94,15 @@ class PandaDefaultConfig:
         # PD position
         arm_pd_ee_pose = PDEEPoseControllerConfig(
             self.arm_joint_names,
-            -0.1,
-            0.1,
-            0.1,
+            -10000,
+            10000,
+            10000,
             self.arm_stiffness,
             self.arm_damping,
             self.arm_force_limit,
             ee_link=self.ee_link_name,
             use_delta=False,
+            frame="base",
         )
 
         arm_pd_ee_target_delta_pos = deepcopy(arm_pd_ee_delta_pos)

@@ -107,7 +107,8 @@ def from_pd_joint_pos_to_ee(
     pin_model = ori_controller.articulation.create_pinocchio_model()
     ori_arm_controller: PDJointPosController = ori_controller.controllers["arm"]
     arm_controller: PDEEPoseController = controller.controllers["arm"]
-    assert arm_controller.config.frame == "ee"
+    if "delta" in output_mode:
+        assert arm_controller.config.frame == "ee"
     ee_link: sapien.Link = arm_controller.ee_link
 
     info = {}
@@ -115,8 +116,7 @@ def from_pd_joint_pos_to_ee(
     for t in range(n):
         if pbar is not None:
             pbar.update()
-
-        ori_action = ori_actions[t]
+        ori_action = ori_actions[t] # Joint
         ori_action_dict = ori_controller.to_action_dict(ori_action)
         output_action_dict = ori_action_dict.copy()  # do not in-place modify
 
@@ -133,29 +133,32 @@ def from_pd_joint_pos_to_ee(
         flag = True
 
         for _ in range(2):
-            if target_mode:
-                prev_ee_pose_at_base = arm_controller._target_pose
-            else:
-                base_pose = arm_controller.articulation.pose
-                prev_ee_pose_at_base = base_pose.inv() * ee_link.pose
+            if "delta" in output_mode:
+                if target_mode:
+                    prev_ee_pose_at_base = arm_controller._target_pose
+                else:
+                    base_pose = arm_controller.articulation.pose
+                    prev_ee_pose_at_base = base_pose.inv() * ee_link.pose # ee_link.pose is the tcp_pose
+                ee_pose_at_ee = prev_ee_pose_at_base.inv() * target_ee_pose # Pose (pos, quat)
+                arm_action = delta_pose_to_pd_ee_delta(
+                    arm_controller, ee_pose_at_ee, pos_only=pos_only
+                ) # Pose (pos, axis-angle)
 
-            ee_pose_at_ee = prev_ee_pose_at_base.inv() * target_ee_pose
-            arm_action = delta_pose_to_pd_ee_delta(
-                arm_controller, ee_pose_at_ee, pos_only=pos_only
-            )
-
-            if (np.abs(arm_action[:3])).max() > 1:  # position clipping
-                if verbose:
-                    tqdm.write(f"Position action is clipped: {arm_action[:3]}")
-                arm_action[:3] = np.clip(arm_action[:3], -1, 1)
-                flag = False
-            if not pos_only:
-                if np.linalg.norm(arm_action[3:]) > 1:  # rotation clipping
+                if (np.abs(arm_action[:3])).max() > 1:  # position clipping
                     if verbose:
-                        tqdm.write(f"Rotation action is clipped: {arm_action[3:]}")
-                    arm_action[3:] = arm_action[3:] / np.linalg.norm(arm_action[3:])
+                        tqdm.write(f"Position action is clipped: {arm_action[:3]}")
+                    arm_action[:3] = np.clip(arm_action[:3], -1, 1)
                     flag = False
-
+                if not pos_only:
+                    if np.linalg.norm(arm_action[3:]) > 1:  # rotation clipping
+                        if verbose:
+                            tqdm.write(f"Rotation action is clipped: {arm_action[3:]}")
+                        arm_action[3:] = arm_action[3:] / np.linalg.norm(arm_action[3:])
+                        flag = False
+            else:
+                arm_action = delta_pose_to_pd_ee_delta(
+                    arm_controller, target_ee_pose, pos_only=pos_only
+                ) # Pose (pos, axis-angle)
             output_action_dict["arm"] = arm_action
             output_action = controller.from_action_dict(output_action_dict)
 
