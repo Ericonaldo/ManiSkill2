@@ -55,7 +55,7 @@ class BaseEvaluator:
                 metrics = extract_scalars_from_info(info, "TimeLimit.truncated")
                 return metrics
 
-    def evaluate_episodes(self, episode_cfgs: List[dict], callback: Callable = None):
+    def evaluate_episodes(self, episode_cfgs: List[dict], callback: Callable = None, render_mode=None):
         """Evaluate episodes according to configurations.
 
         Args:
@@ -69,7 +69,7 @@ class BaseEvaluator:
         for i, episode_cfg in enumerate(episode_cfgs):
             episode_id = episode_cfg.get("episode_id", i)
             reset_kwargs = episode_cfg.get("reset_kwargs", {})
-            metrics = self.evaluate_episode(reset_kwargs)
+            metrics = self.evaluate_episode(reset_kwargs, render_mode=render_mode)
             if metrics is None:
                 raise RuntimeError(
                     "Episode {}: check whether time limit is set".format(episode_id)

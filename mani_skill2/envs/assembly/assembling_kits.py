@@ -25,6 +25,7 @@ class AssemblingKitsEnv(StationaryManipulationEnv):
                 "The objects/kits are not found."
                 "Please download (ManiSkill2) AssemblingKits assets:"
                 "`python -m mani_skill2.utils.download_asset assembling_kits`."
+                "dirs, {}, {}".format(self._kit_dir, self._models_dir)
             )
 
         self._episode_json = load_json(self.asset_root / "episodes.json")

@@ -81,6 +81,12 @@ def parse_args():
         type=str,
         help="Directory to record videos and trajectories. If it is '@', use the output directory.",
     )
+    parser.add_argument(
+        "--render-mode",
+        type=str,
+        help="Render mode",
+        default=None,
+    )
 
     args = parser.parse_args()
     return args
@@ -136,7 +142,7 @@ def main():
         if args.num_episodes is not None:
             episodes = episodes[: args.num_episodes]
         cb = TqdmCallback(len(episodes))
-        evaluator.evaluate_episodes(episodes, callback=cb)
+        evaluator.evaluate_episodes(episodes, callback=cb, render_mode=args.render_mode)
     except:
         exc_info = sys.exc_info()
         print("Error during evaluation", exc_info[:-1])

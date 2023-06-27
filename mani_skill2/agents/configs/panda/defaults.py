@@ -70,7 +70,7 @@ class PandaDefaultConfig:
         arm_pd_joint_target_delta_pos = deepcopy(arm_pd_joint_delta_pos)
         arm_pd_joint_target_delta_pos.use_target = True
 
-        # PD ee position
+        # PD ee delta position
         arm_pd_ee_delta_pos = PDEEPosControllerConfig(
             self.arm_joint_names,
             -0.1,
@@ -89,6 +89,19 @@ class PandaDefaultConfig:
             self.arm_damping,
             self.arm_force_limit,
             ee_link=self.ee_link_name,
+        )
+
+        # PD position
+        arm_pd_ee_pose = PDEEPoseControllerConfig(
+            self.arm_joint_names,
+            -0.1,
+            0.1,
+            0.1,
+            self.arm_stiffness,
+            self.arm_damping,
+            self.arm_force_limit,
+            ee_link=self.ee_link_name,
+            use_delta=False,
         )
 
         arm_pd_ee_target_delta_pos = deepcopy(arm_pd_ee_delta_pos)
@@ -151,6 +164,9 @@ class PandaDefaultConfig:
             pd_ee_delta_pos=dict(arm=arm_pd_ee_delta_pos, gripper=gripper_pd_joint_pos),
             pd_ee_delta_pose=dict(
                 arm=arm_pd_ee_delta_pose, gripper=gripper_pd_joint_pos
+            ),
+            pd_ee_pose=dict(
+                arm=arm_pd_ee_pose, gripper=gripper_pd_joint_pos
             ),
             pd_ee_delta_pose_align=dict(
                 arm=arm_pd_ee_delta_pose_align, gripper=gripper_pd_joint_pos
