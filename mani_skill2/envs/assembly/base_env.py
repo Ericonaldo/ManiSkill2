@@ -74,11 +74,15 @@ class StationaryManipulationEnv(BaseEnv):
         else:
             raise NotImplementedError(self.robot_uid)
 
-    def _register_cameras(self):
-        pose = look_at([0.2, 0, 0.4], [0, 0, 0])
-        return CameraConfig(
-            "base_camera", pose.p, pose.q, 128, 128, np.pi / 2, 0.01, 10
-        )
+    def _register_cameras(self): 
+        # raw camera config, may have block view
+        # pose = look_at([0.2, 0, 0.4], [0, 0, 0])
+        # return CameraConfig(
+        #     "base_camera", pose.p, pose.q, 128, 128, np.pi / 2, 0.01, 10
+        # )
+        # we change it to better view
+        pose = look_at([1.0, 1.0, 0.8], [0.0, 0.0, 0.5])
+        return CameraConfig("base_camera", pose.p, pose.q, 128, 128, 1, 0.01, 10)
 
     def _register_render_cameras(self):
         pose = look_at([1.0, 1.0, 0.8], [0.0, 0.0, 0.5])

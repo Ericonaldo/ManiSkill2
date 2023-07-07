@@ -118,10 +118,17 @@ class StationaryManipulationEnv(BaseEnv):
             raise NotImplementedError(self.robot_uid)
 
     def _register_cameras(self):
-        pose = look_at([0.3, 0, 0.6], [-0.1, 0, 0.1])
-        return CameraConfig(
-            "base_camera", pose.p, pose.q, 128, 128, np.pi / 2, 0.01, 10
-        )
+         # raw camera config, may have block view
+        # pose = look_at([0.3, 0, 0.6], [-0.1, 0, 0.1]) 
+        # return CameraConfig(
+        #     "base_camera", pose.p, pose.q, 128, 128, np.pi / 2, 0.01, 10
+        # )
+        # we change it to a better view (render view)
+        if self.robot_uid == "panda":
+            pose = look_at([0.4, 0.4, 0.8], [0.0, 0.0, 0.4])
+        else:
+            pose = look_at([0.5, 0.5, 1.0], [0.0, 0.0, 0.5])
+        return CameraConfig("base_camera", pose.p, pose.q, 128, 128, 1, 0.01, 10)
 
     def _register_render_cameras(self):
         if self.robot_uid == "panda":

@@ -225,7 +225,8 @@ class AssemblingKitsEnv(StationaryManipulationEnv):
 
     def _register_cameras(self):
         cam_cfg = super()._register_cameras()
-        cam_cfg.pose = look_at([0.2, 0, 0.4], [0, 0, 0])
+        # cam_cfg.pose = look_at([0.2, 0, 0.4], [0, 0, 0]) # raw camera config, may have block view
+        cam_cfg.pose = look_at([0.3, 0.3, 0.8], [0.0, 0.0, 0.1]) # we change it to better view
         return cam_cfg
 
     def _register_render_cameras(self):
