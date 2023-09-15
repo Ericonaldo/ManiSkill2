@@ -173,6 +173,16 @@ class BaseAgent:
         if len(controller_state) > 0:
             obs.update(controller=controller_state)
         return obs
+    
+    def get_proprioception_with_ee_pose(self):
+        base_pose = self.controller.controllers['arm'].articulation.pose
+        ee_link = self.controller.controllers['arm'].ee_link
+        ee_pose_at_base = base_pose.inv() * ee_link.pose
+        obs = OrderedDict(qpos=self.robot.get_qpos(), qvel=self.robot.get_qvel(), ee_pose=np.concatenate([ee_pose_at_base.p, ee_pose_at_base.q]))
+        controller_state = self.controller.controllers['arm'].get_state()
+        if len(controller_state) > 0:
+            obs.update(controller=controller_state)
+        return obs
 
     def get_state(self) -> Dict:
         """Get current state for MPC, including robot state and controller state"""

@@ -118,7 +118,7 @@ class StationaryManipulationEnv(BaseEnv):
             raise NotImplementedError(self.robot_uid)
 
     def _register_cameras(self):
-         # raw camera config, may have block view
+        # raw camera config, may have block view
         # pose = look_at([0.3, 0, 0.6], [-0.1, 0, 0.1]) 
         # return CameraConfig(
         #     "base_camera", pose.p, pose.q, 128, 128, np.pi / 2, 0.01, 10
@@ -144,5 +144,6 @@ class StationaryManipulationEnv(BaseEnv):
 
     def _get_obs_agent(self):
         obs = self.agent.get_proprioception()
+        # obs = self.agent.get_proprioception_with_ee_pose()
         obs["base_pose"] = vectorize_pose(self.agent.robot.pose)
         return obs

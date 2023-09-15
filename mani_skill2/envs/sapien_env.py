@@ -275,7 +275,8 @@ class BaseEnv(gym.Env):
 
     def _get_obs_agent(self):
         """Get observations from the agent's sensors, e.g., proprioceptive sensors."""
-        return self.agent.get_proprioception()
+        # return self.agent.get_proprioception()
+        return self.agent.get_proprioception_with_ee_pose()
 
     def _get_obs_extra(self):
         """Get task-relevant extra observations."""

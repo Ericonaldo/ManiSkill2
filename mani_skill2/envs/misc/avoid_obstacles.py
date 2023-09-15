@@ -149,6 +149,7 @@ class AvoidObstaclesBaseEnv(BaseEnv):
 
     def _get_obs_agent(self):
         obs = self.agent.get_proprioception()
+        # obs = self.agent.get_proprioception_with_ee_pose()
         obs["base_pose"] = vectorize_pose(self.agent.robot.pose)
         return obs
 
