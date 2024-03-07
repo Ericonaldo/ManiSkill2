@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Sequence
+from typing import Sequence, Union
 
 import gym
 import numpy as np
@@ -11,6 +11,11 @@ from mani_skill2.utils.common import (
     flatten_dict_space_keys,
     merge_dicts,
 )
+
+
+class StateObservationWrapper(gym.ObservationWrapper):
+    def observation(self, observation: Union[dict, np.ndarray]):
+        return observation
 
 
 class RGBDObservationWrapper(gym.ObservationWrapper):

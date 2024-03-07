@@ -10,6 +10,7 @@ from mani_skill2.envs.sapien_env import BaseEnv
 from mani_skill2.utils.wrappers.observation import (
     PointCloudObservationWrapper,
     RGBDObservationWrapper,
+    StateObservationWrapper,
     RobotSegmentationObservationWrapper,
 )
 
@@ -96,6 +97,8 @@ def make(env_id, as_gym=True, enable_segmentation=False, **kwargs):
         env = RGBDObservationWrapper(env)
     elif "pointcloud" in obs_mode:
         env = PointCloudObservationWrapper(env)
+    elif "state" in obs_mode:
+        env = StateObservationWrapper(env)
 
     # Add robot segmentation wrapper
     if "robot_seg" in obs_mode:
