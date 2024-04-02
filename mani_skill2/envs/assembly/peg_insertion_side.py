@@ -15,8 +15,18 @@ from .base_env import StationaryManipulationEnv
 class PegInsertionSideEnv(StationaryManipulationEnv):
     _clearance = 0.003
 
+    def __init__(self, *args, state_version="v0", **kwargs):
+        self._state_version = state_version
+        super().__init__(*args, **kwargs)
+
     def reset(self, reconfigure=True, **kwargs):
         return super().reset(reconfigure=reconfigure, **kwargs)
+
+    def is_grasped(self):
+        is_grasped = self.agent.check_grasp(
+            self.peg, max_angle=20
+        )  # max_angle ensures that the gripper grasps the peg appropriately, not in a strange pose
+        return is_grasped
 
     def _build_box_with_hole(
         self, inner_radius, outer_radius, depth, center=(0, 0), name="box_with_hole"
@@ -146,6 +156,19 @@ class PegInsertionSideEnv(StationaryManipulationEnv):
         )
         # self.peg.set_pose(self.goal_pose)
 
+    def get_obs_kpam(self) -> OrderedDict:
+        return OrderedDict(
+            base_pose=vectorize_pose(self.agent.robot.pose),
+            hand_pose=vectorize_pose(self.hand.pose),
+            peg_pose=vectorize_pose(self.peg.pose),
+            peg_half_size=self.peg_half_size,
+            peg_head_offset=vectorize_pose(self.peg_head_offset),
+            box_hole_pose=vectorize_pose(self.box_hole_pose),
+            joint_positions=self.agent.robot.get_qpos(),
+            dt=1,
+            time=self.elapsed_steps,
+        )
+
     def _get_obs_extra(self) -> OrderedDict:
         obs = OrderedDict(tcp_pose=vectorize_pose(self.tcp.pose))
         if self._obs_mode in ["state", "state_dict"]:
@@ -155,6 +178,35 @@ class PegInsertionSideEnv(StationaryManipulationEnv):
                 box_hole_pose=vectorize_pose(self.box_hole_pose),
                 box_hole_radius=self.box_hole_radius,
             )
+            if self._state_version == "v0":
+                pass
+            elif self._state_version == "v1":
+                is_grasped = self.agent.check_grasp(
+                    self.peg, max_angle=20
+                )  # max_angle ensures that the gripper grasps the peg appropriately, not in a strange pose
+                if is_grasped:
+                    peg_head_wrt_goal_pose = self.goal_pose.inv() * self.peg_head_pose
+                else:
+                    peg_head_wrt_goal_pose = Pose([0., 0., 0.])
+                obs.update(
+                    peg_head_wrt_goal_pose=vectorize_pose(peg_head_wrt_goal_pose)
+                )
+            elif self._state_version == "v2":
+                is_grasped = self.agent.check_grasp(
+                    self.peg, max_angle=20
+                )  # max_angle ensures that the gripper grasps the peg appropriately, not in a strange pose
+                if is_grasped:
+                    peg_head_wrt_goal_pose = self.goal_pose.inv() * self.peg_head_pose
+                    peg_wrt_goal_pose = self.goal_pose.inv() * self.peg.pose
+                else:
+                    peg_head_wrt_goal_pose = Pose([0., 0., 0.])
+                    peg_wrt_goal_pose = Pose([0., 0., 0.])
+                obs.update(
+                    peg_head_wrt_goal_yz=peg_head_wrt_goal_pose.p[1:],
+                    peg_wrt_goal_yz=peg_wrt_goal_pose.p[1:],
+                )
+            else:
+                raise ValueError(f"Unknown state version {self._state_version}!")
         return obs
 
     def has_peg_inserted(self):

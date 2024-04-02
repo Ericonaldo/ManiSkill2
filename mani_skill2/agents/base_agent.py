@@ -173,7 +173,7 @@ class BaseAgent:
         if len(controller_state) > 0:
             obs.update(controller=controller_state)
         return obs
-    
+
     def get_proprioception_with_ee_pose(self):
         base_pose = self.controller.controllers['arm'].articulation.pose
         ee_link = self.controller.controllers['arm'].ee_link

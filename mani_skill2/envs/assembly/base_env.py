@@ -47,6 +47,7 @@ class StationaryManipulationEnv(BaseEnv):
         self.tcp: sapien.Link = get_entity_by_name(
             self.agent.robot.get_links(), self.agent.config.ee_link_name
         )
+        self.hand: sapien.Link = get_entity_by_name(self.agent.robot.get_links(), "panda_hand")
         set_articulation_render_material(self.agent.robot, specular=0.9, roughness=0.3)
 
     def _initialize_agent(self):
@@ -74,7 +75,7 @@ class StationaryManipulationEnv(BaseEnv):
         else:
             raise NotImplementedError(self.robot_uid)
 
-    def _register_cameras(self): 
+    def _register_cameras(self):
         # raw camera config, may have block view
         # pose = look_at([0.2, 0, 0.4], [0, 0, 0])
         # return CameraConfig(
