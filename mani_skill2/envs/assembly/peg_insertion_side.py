@@ -15,7 +15,7 @@ from .base_env import StationaryManipulationEnv
 class PegInsertionSideEnv(StationaryManipulationEnv):
     _clearance = 0.003
 
-    def __init__(self, *args, state_version="v0", **kwargs):
+    def __init__(self, *args, state_version: str = "v0", **kwargs):
         self._state_version = state_version
         super().__init__(*args, **kwargs)
 
@@ -168,6 +168,19 @@ class PegInsertionSideEnv(StationaryManipulationEnv):
             dt=1,
             time=self.elapsed_steps,
         )
+
+    def get_kpam_state(self) -> OrderedDict:
+        peg_head_wrt_goal = self.goal_pose.inv() * self.peg_head_pose
+        peg_head_wrt_goal_yz_dist = np.linalg.norm(peg_head_wrt_goal.p[1:])
+        peg_head_wrt_goal_x_dist = np.abs(peg_head_wrt_goal.p[0])
+        peg_wrt_goal = self.goal_pose.inv() * self.peg.pose
+        peg_wrt_goal_yz_dist = np.linalg.norm(peg_wrt_goal.p[1:])
+        kpam_state = OrderedDict(
+            peg_head_wrt_goal_yz_dist=peg_head_wrt_goal_yz_dist,
+            peg_wrt_goal_yz_dist=peg_wrt_goal_yz_dist,
+            peg_head_wrt_goal_x_dist=peg_head_wrt_goal_x_dist,
+        )
+        return kpam_state
 
     def _get_obs_extra(self) -> OrderedDict:
         obs = OrderedDict(tcp_pose=vectorize_pose(self.tcp.pose))
