@@ -7,6 +7,7 @@ from transforms3d.euler import euler2quat
 
 from mani_skill2.utils.registration import register_env
 from mani_skill2.utils.sapien_utils import hex2rgba, look_at, vectorize_pose
+from mani_skill2.sensors.camera import CameraConfig
 
 from .base_env import StationaryManipulationEnv
 
@@ -328,7 +329,12 @@ class PegInsertionSideEnv(StationaryManipulationEnv):
         cam_cfg = super()._register_cameras()
         # cam_cfg.pose = look_at([0, -0.3, 0.2], [0, 0, 0.1]) # raw camera config, may have block view
         cam_cfg.pose = look_at([0.5, -0.5, 0.8], [0.05, -0.1, 0.4])  # we change it to better view
-        return cam_cfg
+
+        topdown_cam_pose = look_at([-0.3, 0.15, 1.5], [-0.3, 0.15, 0.4], up=[1, 0, 0])
+        topdown_cam_cfg = CameraConfig("topdown_camera", topdown_cam_pose.p, topdown_cam_pose.q, 128, 128, 1, 0.01, 10)
+
+        cam_cfgs = [cam_cfg, topdown_cam_cfg]
+        return cam_cfgs
 
     def _register_render_cameras(self):
         cam_cfg = super()._register_render_cameras()

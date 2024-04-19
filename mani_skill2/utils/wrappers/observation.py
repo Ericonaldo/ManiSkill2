@@ -127,6 +127,9 @@ class PointCloudObservationWrapper(gym.ObservationWrapper):
         pointcloud_obs = OrderedDict()
 
         for cam_uid, images in image_obs.items():
+            if cam_uid == "hand_camera":
+                continue
+
             cam_pcd = {}
 
             # Each pixel is (x, y, z, z_buffer_depth) in OpenGL camera space
