@@ -16,11 +16,23 @@ from .base_env import StationaryManipulationEnv
 class PegInsertionSideEnv(StationaryManipulationEnv):
     _clearance = 0.003
 
-    def __init__(self, *args, state_version: str = "v0", **kwargs):
+    def __init__(
+        self,
+        *args,
+        add_front_cover: bool = False,
+        state_version: str = "v0",
+        fixed_hole: bool = False,
+        camera_setting: str = "frontback",
+        **kwargs,
+    ):
+        assert camera_setting in ["standard", "frontback", "front"], camera_setting
         self._state_version = state_version
+        self.camera_setting = camera_setting
+        self.add_front_cover = add_front_cover
+        self.fixed_hole = fixed_hole
         super().__init__(*args, **kwargs)
 
-    def reset(self, reconfigure=True, **kwargs):
+    def reset(self, reconfigure: bool = True, **kwargs):
         return super().reset(reconfigure=reconfigure, **kwargs)
 
     def is_grasped(self):
@@ -30,9 +42,20 @@ class PegInsertionSideEnv(StationaryManipulationEnv):
         return is_grasped
 
     def _build_box_with_hole(
-        self, inner_radius, outer_radius, depth, center=(0, 0), name="box_with_hole"
+        self,
+        inner_radius,
+        outer_radius,
+        depth,
+        center=(0, 0),
+        name="box_with_hole",
     ):
         builder = self._scene.create_actor_builder()
+        mat = self._renderer.create_material()
+        mat.set_base_color(hex2rgba("#FFD289"))
+        mat.metallic = 0.0
+        mat.roughness = 0.5
+        mat.specular = 0.5
+
         thickness = (outer_radius - inner_radius) * 0.5
         # x-axis is hole direction
         half_center = [x * 0.5 for x in center]
@@ -50,15 +73,19 @@ class PegInsertionSideEnv(StationaryManipulationEnv):
             Pose([0, 0, -offset + half_center[1]]),
         ]
 
-        mat = self._renderer.create_material()
-        mat.set_base_color(hex2rgba("#FFD289"))
-        mat.metallic = 0.0
-        mat.roughness = 0.5
-        mat.specular = 0.5
-
         for (half_size, pose) in zip(half_sizes, poses):
             builder.add_box_collision(pose, half_size)
             builder.add_box_visual(pose, half_size, material=mat)
+        if self.add_front_cover:
+            mat = self._renderer.create_material()
+            mat.set_base_color(hex2rgba("#D0104C"))
+            mat.metallic = 0.0
+            mat.roughness = 0.5
+            mat.specular = 0.5
+            for (half_size, pose) in zip(half_sizes, poses):
+                pose = pose.transform(Pose([-depth, 0, 0]))
+                half_size = [0.01, half_size[1], half_size[2]]
+                builder.add_box_visual(pose, half_size, material=mat)
         return builder.build_static(name)
 
     def _load_actors(self):
@@ -100,7 +127,10 @@ class PegInsertionSideEnv(StationaryManipulationEnv):
         self.peg_half_size = np.float32([length, radius, radius])
 
         # box with hole
-        center = 0.5 * (length - radius) * self._episode_rng.uniform(-1, 1, size=2)
+        if self.fixed_hole:
+            center = np.array([0.0, 0.0])
+        else:
+            center = 0.5 * (length - radius) * self._episode_rng.uniform(-1, 1, size=2)
         inner_radius, outer_radius, depth = radius + self._clearance, length, length
         self.box = self._build_box_with_hole(
             inner_radius, outer_radius, depth, center=center
@@ -326,14 +356,27 @@ class PegInsertionSideEnv(StationaryManipulationEnv):
         return reward
 
     def _register_cameras(self):
-        cam_cfg = super()._register_cameras()
-        # cam_cfg.pose = look_at([0, -0.3, 0.2], [0, 0, 0.1]) # raw camera config, may have block view
-        cam_cfg.pose = look_at([0.5, -0.5, 0.8], [0.05, -0.1, 0.4])  # we change it to better view
+        if self.camera_setting == "standard":
+            cam_cfg = super()._register_cameras()
+            cam_cfg.pose = look_at([0, -0.3, 0.2], [0, 0, 0.1]) # raw camera config, may have block view
+            cam_cfg.pose = look_at([0.5, -0.5, 0.8], [0.05, -0.1, 0.4])  # we change it to better view
+            return cam_cfg
 
-        topdown_cam_pose = look_at([-0.3, 0.15, 1.5], [-0.3, 0.15, 0.4], up=[1, 0, 0])
-        topdown_cam_cfg = CameraConfig("topdown_camera", topdown_cam_pose.p, topdown_cam_pose.q, 128, 128, 1, 0.01, 10)
+        cam_cfgs = []
+        if "front" in self.camera_setting:
+            leftfront_cam_pose = look_at([0.8, 0.7, 0.8], [-0.3, 0.15, 0.4])
+            leftfront_cam_cfg = CameraConfig("leftfront_camera", leftfront_cam_pose.p, leftfront_cam_pose.q, 128, 128, 1, 0.01, 10)
+            rightfront_cam_pose = look_at([0.8, -0.7, 0.8], [-0.3, 0.15, 0.4])
+            rightfront_cam_cfg = CameraConfig("rightfront_camera", rightfront_cam_pose.p, rightfront_cam_pose.q, 128, 128, 1, 0.01, 10)
+            cam_cfgs.extend([leftfront_cam_cfg, rightfront_cam_cfg])
 
-        cam_cfgs = [cam_cfg, topdown_cam_cfg]
+        if "back" in self.camera_setting:
+            leftback_cam_pose = look_at([-0.8, 0.7, 0.8], [-0.3, 0.15, 0.4])
+            leftback_cam_cfg = CameraConfig("leftback_camera", leftback_cam_pose.p, leftback_cam_pose.q, 128, 128, 1, 0.01, 10)
+            rightback_cam_pose = look_at([-0.8, -0.7, 0.8], [-0.3, 0.15, 0.4])
+            rightback_cam_cfg = CameraConfig("rightback_camera", rightback_cam_pose.p, rightback_cam_pose.q, 128, 128, 1, 0.01, 10)
+            cam_cfgs.extend([leftback_cam_cfg, rightback_cam_cfg])
+
         return cam_cfgs
 
     def _register_render_cameras(self):
